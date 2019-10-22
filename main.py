@@ -40,7 +40,17 @@ def plot(x, y, xlabel, ylabel, name_fig, xlog=False, ylog=False):
     plt.savefig(name_fig + '.pdf')
 
 
-def first_question(data):
+def first_question():
+    print("Question 1...\n")
+    # nrows=92507632
+    nrows = 10**7
+    data = pd.read_csv(
+        "netflow.csv_639fee2103e6c2d3180d_.gz",
+        nrows=nrows,
+        usecols=[
+            'ipkt',
+            'ibyt'],
+        compression='gzip')
     packet_size = data.ibyt / data.ipkt
     x, y = CDF_test(packet_size)
 
@@ -48,30 +58,55 @@ def first_question(data):
     plot(x, y, '$Packet\ size\ (byte)$', '$Probability$', 'CDFipkt')
 
     # average packet size
-    print('average packet size: %.2f' % (np.mean(packet_size)))
+    print('average packet size: %.2f\n' % (np.mean(packet_size)))
+    print("End of Question 1!\n")
 
 
-def second_question(data):
+def second_question():
+    print("Question 2...\n")
+    # nrows=92507632
+    nrows = 10**7
+    data = pd.read_csv(
+        "netflow.csv_639fee2103e6c2d3180d_.gz",
+        nrows=nrows,
+        usecols=[
+            'ipkt',
+            'ibyt',
+            'td'],
+        compression='gzip')
     field = {'td': '$flow\ duration\ (s?)$',
              'ipkt': '$size\ of\ flow\ (packet)$',
              'ibyt': '$size\ of\ flow\ (bytes)$'}
     for key, value in field.items():
-        x, y = CDF(data[key], True)
+        x, y = CDF_test(data[key], True)
         # plot linear scale
         plot(x, y, value, '$p$', 'ccdf_linear_' + key)
-        plot(x, y, value, '$p$', 'ccdf_log_' + key, True, True)
+        plot(x, y, value, '$p$', 'ccdf_log_' + key, True, False)
+    print("End of Question 2!\n")
 
 
-def third_question(data):
-    tcp_data = netf_trace.loc[
-        (netf_trace['pr'] == 'TCP'), [
-            'sp', 'dp', 'ibyt']]
+def third_question():
+    print("Question 3...\n")
+    # nrows=92507632
+    nrows = 10**7
+    netf_trace = pd.read_csv(
+        "netflow.csv_639fee2103e6c2d3180d_.gz",
+        nrows=nrows,
+        usecols=[
+            'sp',
+            'dp',
+            'pr',
+            'ibyt',
+            'td'],
+        compression='gzip')
     # print(tcp_data[tcp_data['sp'].value_counts().index])
-    print(tcp_data['sp'].value_counts().head(10))
-    print(tcp_data['dp'].value_counts().head(10))
-    udp_data = netf_trace.loc[(netf_trace['pr'] == 'UDP'), ['sp', 'dp']]
-    print(udp_data['sp'].value_counts().head(10))
-    print(udp_data['dp'].value_counts().head(10))
+    # TCP
+    print(netf_trace[(netf_trace.pr == 'TCP')].value_counts().head(10))
+    print(netf_trace[(netf_trace.pr == 'TCP')].value_counts().head(10))
+    # UDP
+    print(netf_trace[(netf_trace.pr == 'UDP')].value_counts().head(10))
+    print(netf_trace[(netf_trace.pr == 'UDP')].value_counts().head(10))
+    print("End of Question 3!\n")
 
     # Indices used in nfdump 1.6
     # ts,te,td  time records: t-start, t-end, duration
@@ -100,37 +135,24 @@ def third_question(data):
 
 
 def main():
-    netf_trace = pd.read_csv(
-        "netflow.csv_639fee2103e6c2d3180d_.gz",
-        nrows=92507632,
-        usecols=[
-            'ipkt',
-            'ibyt'],
-        compression='gzip')
     # print(netf_trace.ibyt / netf_trace.ipkt)
     #-------------question 1-------------
 
     # retreive the packet size from the dataframe
-    first_question(netf_trace)
-    netf_trace = None
+
+    first_question()
+    # print("end")
+
     #-------------question 2-------------
 
     # retreive the flow duration and the flow sizes from the dataframe
-    netf_trace = pd.read_csv(
-        "netflow.csv_639fee2103e6c2d3180d_.gz",
-        nrows=92507632,
-        usecols=[
-            'ipkt',
-            'ibyt',
-            'td'],
-        compression='gzip')
     # and compute their CCDF
-    second_question(netf_trace)
+    second_question()
 
     #-------------question 3-------------
 
     # filter TCP/UDP flows
-
+    third_question()
 
 if __name__ == "__main__":
     # execute only if run as a script
