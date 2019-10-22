@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 
 
 def CDF(data, comp=False):
@@ -87,8 +88,8 @@ def second_question():
 
 def third_question():
     print("Question 3...\n")
-    # nrows=92507632
-    nrows = 10**7
+    nrows = 92507632
+    #nrows = 10**4
     netf_trace = pd.read_csv(
         "netflow.csv_639fee2103e6c2d3180d_.gz",
         nrows=nrows,
@@ -96,16 +97,20 @@ def third_question():
             'sp',
             'dp',
             'pr',
-            'ibyt',
-            'td'],
+            'ibyt'],
         compression='gzip')
     # print(tcp_data[tcp_data['sp'].value_counts().index])
     # TCP
-    print(netf_trace[(netf_trace.pr == 'TCP')].value_counts().head(10))
-    print(netf_trace[(netf_trace.pr == 'TCP')].value_counts().head(10))
+    print("TCP:\n")
+    print(netf_trace[(netf_trace.pr == 'TCP')].sp.value_counts().head(10))
+    print("\n")
+    print(netf_trace[(netf_trace.pr == 'TCP')].dp.value_counts().head(10))
     # UDP
-    print(netf_trace[(netf_trace.pr == 'UDP')].value_counts().head(10))
-    print(netf_trace[(netf_trace.pr == 'UDP')].value_counts().head(10))
+    print("\nUDP:\n")
+    print(netf_trace[(netf_trace.pr == 'UDP')].sp.value_counts().head(10))
+    print("\n")
+    print(netf_trace[(netf_trace.pr == 'UDP')].dp.value_counts().head(10))
+    print("\n")
     print("End of Question 3!\n")
 
     # Indices used in nfdump 1.6
@@ -134,26 +139,32 @@ def third_question():
     # exid      exporter SysID
 
 
-def main():
+def main(argv):
     # print(netf_trace.ibyt / netf_trace.ipkt)
-    #-------------question 1-------------
+    if argv[0] == "1":
+        #-------------question 1-------------
 
-    # retreive the packet size from the dataframe
+        # retreive the packet size from the dataframe
 
-    first_question()
-    # print("end")
+        first_question()
+    elif argv[0] == "2":
+        #-------------question 2-------------
 
-    #-------------question 2-------------
+        # retreive the flow duration and the flow sizes from the dataframe
+        # and compute their CCDF
+        second_question()
+    elif argv[0] == "3":
+        #-------------question 3-------------
 
-    # retreive the flow duration and the flow sizes from the dataframe
-    # and compute their CCDF
-    second_question()
-
-    #-------------question 3-------------
-
-    # filter TCP/UDP flows
-    third_question()
+        # filter TCP/UDP flows
+        third_question()
+    elif argv[0] == "4":
+        return
+    elif argv[0] == "5":
+        return
+    else:
+        print("Choose only one question between 1 and 5 only!")
 
 if __name__ == "__main__":
     # execute only if run as a script
-    main()
+    main(sys.argv[1:])
