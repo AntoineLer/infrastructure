@@ -3,6 +3,31 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
+# Indices used in nfdump 1.6
+# ts,te,td  time records: t-start, t-end, duration
+# sa,da     src dst address
+# sp,dp     src, dst port
+# pr        protocol
+# flg       flags
+# fwd       forwarding status
+# stos      src tos
+# ipkt,ibyt input packets/bytes
+# opkt,obyt output packets, bytes
+# in,out    input/output interface SNMP number
+# sas,das   src, dst AS
+# smk,dmk   src, dst mask
+# dtos      dst tos
+# dir       direction
+# nh,nhb    nethop IP address, bgp next hop IP
+# svln,dvln src, dst vlan id
+# ismc,odmc input src, output dst MAC
+# idmc,osmc input dst, output src MAC
+# mpls1,mpls2,mpls3,mpls4,mpls5,mpls6,mpls7,mpls8,mpls9,mpls10 MPLS label 1-10
+# cl,sl,al  client server application latency (nprobe)
+# ra        router IP
+# eng       router engine type/id
+# exid      exporter SysID
+
 
 def CDF(data, comp=False):
 
@@ -88,8 +113,8 @@ def second_question():
 
 def third_question():
     print("Question 3...\n")
-    nrows = 92507632
-    #nrows = 10**4
+    #nrows = 92507632
+    nrows = 10**7
     netf_trace = pd.read_csv(
         "netflow.csv_639fee2103e6c2d3180d_.gz",
         nrows=nrows,
@@ -101,42 +126,55 @@ def third_question():
         compression='gzip')
     # print(tcp_data[tcp_data['sp'].value_counts().index])
     # TCP
-    print("TCP:\n")
-    print(netf_trace[(netf_trace.pr == 'TCP')].sp.value_counts().head(10))
-    print("\n")
-    print(netf_trace[(netf_trace.pr == 'TCP')].dp.value_counts().head(10))
-    # UDP
-    print("\nUDP:\n")
-    print(netf_trace[(netf_trace.pr == 'UDP')].sp.value_counts().head(10))
-    print("\n")
-    print(netf_trace[(netf_trace.pr == 'UDP')].dp.value_counts().head(10))
-    print("\n")
-    print("End of Question 3!\n")
+    number_of_byte = netf_trace.ibyt.sum()
+    print(number_of_byte)
+    # TCP
 
-    # Indices used in nfdump 1.6
-    # ts,te,td  time records: t-start, t-end, duration
-    # sa,da     src dst address
-    # sp,dp     src, dst port
-    # pr        protocol
-    # flg       flags
-    # fwd       forwarding status
-    # stos      src tos
-    # ipkt,ibyt input packets/bytes
-    # opkt,obyt output packets, bytes
-    # in,out    input/output interface SNMP number
-    # sas,das   src, dst AS
-    # smk,dmk   src, dst mask
-    # dtos      dst tos
-    # dir       direction
-    # nh,nhb    nethop IP address, bgp next hop IP
-    # svln,dvln src, dst vlan id
-    # ismc,odmc input src, output dst MAC
-    # idmc,osmc input dst, output src MAC
-    # mpls1,mpls2,mpls3,mpls4,mpls5,mpls6,mpls7,mpls8,mpls9,mpls10 MPLS label 1-10
-    # cl,sl,al  client server application latency (nprobe)
-    # ra        router IP
-    # eng       router engine type/id
-    # exid      exporter SysID
+    # Source port in TCP
+    print("TCP Source Port:\n")
+    tcp_sp = netf_trace[netf_trace.pr ==
+                        'TCP'].sp.value_counts().head(10)
+    tcp_sp = netf_trace[netf_trace.sp.isin(tcp_sp.index)].loc[
+        :, ['sp', 'ibyt']].groupby('sp').sum()
+    tcp_sp['Volume Traffic'] = tcp_sp.ibyt / number_of_byte
+    tcp_sp.index.name = "Source_port"
+    print(tcp_sp, "\n")
+
+    # Destination Port in TCP
+    print("TCP Destination Port:\n")
+    tcp_dp = netf_trace[netf_trace.pr ==
+                        'TCP'].dp.value_counts().head(10)
+    tcp_dp = netf_trace[netf_trace.dp.isin(tcp_dp.index)].loc[
+        :, ['dp', 'ibyt']].groupby('dp').sum()
+    tcp_dp['Volume Traffic'] = tcp_dp.ibyt / number_of_byte
+    tcp_dp.index.name = "Dest_port"
+    print(tcp_dp, "\n")
+    # END of TCP
+
+    # UDP
+
+    # Source port in UDP
+    print("UDP Source Port:\n")
+    udp_sp = netf_trace[netf_trace.pr ==
+                        'UDP'].sp.value_counts().head(10)
+    udp_sp = netf_trace[netf_trace.sp.isin(udp_sp.index)].loc[
+        :, ['sp', 'ibyt']].groupby('sp').sum()
+    udp_sp['Volume Traffic'] = udp_sp.ibyt / number_of_byte
+    udp_sp.index.name = "Source_port"
+    print(udp_sp, "\n")
+
+    # Destination Port in TCP
+    print("UDP Destination Port:\n")
+    udp_dp = netf_trace[netf_trace.pr ==
+                        'UDP'].dp.value_counts().head(10)
+    udp_dp = netf_trace[netf_trace.dp.isin(udp_dp.index)].loc[
+        :, ['dp', 'ibyt']].groupby('dp').sum()
+    udp_dp['Volume Traffic'] = udp_dp.ibyt / number_of_byte
+    udp_dp.index.name = "Dest_port"
+    print(udp_dp, "\n")
+    # END of UDP
+
+    print("End of Question 3!\n")
 
 
 def main(argv):
