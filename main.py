@@ -68,8 +68,8 @@ def plot(x, y, xlabel, ylabel, name_fig, xlog=False, ylog=False):
 
 def first_question():
     print("Question 1...\n")
-    # nrows=92507632
-    nrows = 10**7
+    nrows = 92507632
+    #nrows = 10**7
     data = pd.read_csv(
         "netflow.csv_639fee2103e6c2d3180d_.gz",
         nrows=nrows,
@@ -90,8 +90,8 @@ def first_question():
 
 def second_question():
     print("Question 2...\n")
-    # nrows=92507632
-    nrows = 10**7
+    nrows = 92507632
+    #nrows = 10**7
     data = pd.read_csv(
         "netflow.csv_639fee2103e6c2d3180d_.gz",
         nrows=nrows,
@@ -113,8 +113,8 @@ def second_question():
 
 def third_question():
     print("Question 3...\n")
-    #nrows = 92507632
-    nrows = 10**7
+    nrows = 92507632
+    #nrows = 10**7
     netf_trace = pd.read_csv(
         "netflow.csv_639fee2103e6c2d3180d_.gz",
         nrows=nrows,
