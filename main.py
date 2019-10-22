@@ -69,7 +69,7 @@ def plot(x, y, xlabel, ylabel, name_fig, xlog=False, ylog=False):
 def first_question():
     print("Question 1...\n")
     nrows = 92507632
-    #nrows = 10**7
+    # nrows = 10**7
     data = pd.read_csv(
         "netflow.csv_639fee2103e6c2d3180d_.gz",
         nrows=nrows,
@@ -78,10 +78,12 @@ def first_question():
             'ibyt'],
         compression='gzip')
     packet_size = data.ibyt / data.ipkt
+    print("Total number of byte", data.ibyt.sum(), "\n")
+    data = None
     x, y = CDF_test(packet_size)
 
     # plot the cumulative distribution function
-    plot(x, y, '$Packet\ size\ (byte)$', '$Probability$', 'CDFipkt')
+    plot(x, y, '$Packet\ size\ (byte)$', '$Probability$', 'CDF_size_pkt')
 
     # average packet size
     print('average packet size: %.2f\n' % (np.mean(packet_size)))
@@ -91,7 +93,7 @@ def first_question():
 def second_question():
     print("Question 2...\n")
     nrows = 92507632
-    #nrows = 10**7
+    # nrows = 10**7
     data = pd.read_csv(
         "netflow.csv_639fee2103e6c2d3180d_.gz",
         nrows=nrows,
@@ -114,7 +116,7 @@ def second_question():
 def third_question():
     print("Question 3...\n")
     nrows = 92507632
-    #nrows = 10**7
+    # nrows = 10**7
     netf_trace = pd.read_csv(
         "netflow.csv_639fee2103e6c2d3180d_.gz",
         nrows=nrows,
@@ -124,10 +126,8 @@ def third_question():
             'pr',
             'ibyt'],
         compression='gzip')
-    # print(tcp_data[tcp_data['sp'].value_counts().index])
-    # TCP
     number_of_byte = netf_trace.ibyt.sum()
-    print(number_of_byte)
+    print("Total number of byte", number_of_byte)
     # TCP
 
     # Source port in TCP
@@ -177,6 +177,53 @@ def third_question():
     print("End of Question 3!\n")
 
 
+def fourth_question():
+    print("Question 4...\n")
+    nrows = 92507632
+    nrows = 10**7
+    netf_trace = pd.read_csv(
+        "netflow.csv_639fee2103e6c2d3180d_.gz",
+        nrows=nrows,
+        usecols=[
+            'sa',
+            'ibyt'],
+        compression='gzip')
+
+    # TOTAL Byte
+    total_byte = netf_trace.ibyt.sum()
+
+    # EXCLUDED DATA == IPv6
+    excluded_data = netf_trace[netf_trace['sa'].str.contains(":")]
+    print(
+        "Percentage of traffic excluded :",
+        excluded_data.ibyt.sum() /
+        total_byte,
+        "\n")
+    excluded_data = None
+
+    # EXCLUDING IPv6 from data
+    netf_trace = netf_trace[(netf_trace['sa'].str.contains(":") == False)]
+
+    # CREATING IP PREFIX (SOURCE ADDRESS)
+    netf_trace[['First', 'Second', 'Third', 'Fourth']
+               ] = netf_trace.sa.str.split(".", expand=True)
+    netf_trace['Prefix'] = netf_trace.First + \
+        '.' + netf_trace.Second + '.0.0/16'
+    netf_trace.drop(['First', 'Second', 'Third', 'Fourth'],
+                    axis=1, inplace=True)
+
+    # SORTING Source IP
+    counter = netf_trace.Prefix.value_counts()
+    netf_trace = netf_trace[
+        netf_trace.Prefix.isin(counter.index)].loc[:, ['Prefix', 'ibyt']].groupby('Prefix').sum()
+    netf_trace.index.name = "Prefix IP"
+    netf_trace['Prefix'] = netf_trace.index
+    netf_trace.index = pd.Series(range(0, len(netf_trace.index)))
+    netf_trace = netf_trace.sort_values(by='ibyt')
+    print(netf_trace)
+    print("End of Question 4!\n")
+
+
 def main(argv):
     # print(netf_trace.ibyt / netf_trace.ipkt)
     if argv[0] == "1":
@@ -197,7 +244,7 @@ def main(argv):
         # filter TCP/UDP flows
         third_question()
     elif argv[0] == "4":
-        return
+        fourth_question()
     elif argv[0] == "5":
         return
     else:
