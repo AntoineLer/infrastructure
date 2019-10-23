@@ -205,14 +205,6 @@ def fourth_question():
     netf_trace = netf_trace[(netf_trace['sa'].str.contains(":") == False)]
 
     # SORTING Source IP
-    counter = netf_trace.sa.value_counts()
-    netf_trace = netf_trace[
-        netf_trace.sa.isin(counter.index)].loc[:, ['sa', 'ibyt']].groupby('sa').sum()
-    counter = None
-    netf_trace.index.name = "IP addresses"
-    netf_trace['sa'] = netf_trace.index
-    netf_trace.index = pd.Series(range(0, len(netf_trace.index)))
-    #netf_trace = netf_trace.sort_values(by='ibyt')
 
     # CREATING IP PREFIX (SOURCE ADDRESS)
     netf_trace[['First', 'Second', 'Third', 'Fourth']
@@ -229,7 +221,6 @@ def fourth_question():
 
 
 def main(argv):
-    # print(netf_trace.ibyt / netf_trace.ipkt)
     if argv[0] == "1":
         #-------------question 1-------------
 
