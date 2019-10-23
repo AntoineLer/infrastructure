@@ -144,7 +144,7 @@ def third_question():
 def fourth_question():
     print("Question 4...\n")
     #nrows = 92507632
-    nrows = 10**5
+    nrows = 10**6
     netf_trace = pd.read_csv(
         "netflow.csv_639fee2103e6c2d3180d_.gz",
         nrows=nrows,
@@ -166,13 +166,13 @@ def fourth_question():
     # EXCLUDING IPv6 from data
     netf_trace = netf_trace[(netf_trace['sa'].str.contains(":") == False)]
 
-    # CREATING IP PREFIX (SOURCE ADDRESS)
+    # CREATING IP PREFIX (SOURCE ADDRESS) with /24 MASK
     netf_trace[['First', 'Second', 'Third', 'Fourth']] = netf_trace.sa.str.split(".", expand=True)
     netf_trace.drop('Fourth', axis=1, inplace=True)
     netf_trace['Prefix'] = netf_trace.First + '.' + netf_trace.Second + '.' + netf_trace.Third + '.0/24'
     netf_trace.drop(['First', 'Second', 'Third'], axis=1, inplace=True)
 
-    # Counting the number of times a prefix is used
+    # COUNTING THE NUMBER OF TIMES A PREFIX WITH /24 MASK IS USED
     counter = netf_trace.Prefix.value_counts()
     netf_trace = netf_trace[netf_trace.Prefix.isin(counter.index)].loc[:, ['Prefix', 'ibyt']].groupby('Prefix').sum()
     netf_trace['Number_of_times_used'] = counter
@@ -180,9 +180,24 @@ def fourth_question():
     netf_trace["Traffic Volume"] = netf_trace.ibyt / total_byte
     netf_trace.drop('ibyt', axis=1, inplace=True)
 
-    # Sorting prefix by the number of times used
-    netf_trace = netf_trace.sort_values(by='Number_of_times_used')
+    # SORTING PREFIX BY THE NUMER OF TIMES USED
+    #netf_trace = netf_trace.sort_values(by='Prefix')
     print(netf_trace)
+
+    ####### ON DOIT DECIDER DE QUEL MASK GARDER ? #######
+
+    # CREATING IP PREFIX (SOURCE ADDRESS) with /16 MASK
+    mask = netf_trace
+    mask['Prefix'] = counter.index
+    mask.index = pd.Series(range(0, len(netf_trace)))
+    mask[['First', 'Second', 'Third', 'Fourth']] = mask.Prefix.str.split(".", expand=True)
+    mask['Prefix'] = netf_trace.First + '.' + netf_trace.Second + '.0.0/16'
+    mask.drop(['First', 'Second', 'Third', 'Fourth'], axis=1, inplace=True)
+    counter = netf_trace.Prefix.value_counts()
+    mask = mask[mask.Prefix.isin(counter.index)].groupby('Prefix').sum()
+    print(mask)
+
+
     most_popular = [0.1 / 100, 1 / 100, 10 / 100]
     length_popular = [np.round(num * len(netf_trace)) for num in most_popular]
     print(length_popular)
