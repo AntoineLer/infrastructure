@@ -210,7 +210,7 @@ def fourth_question():
                ] = netf_trace.sa.str.split(".", expand=True)
     netf_trace.drop('Fourth', axis=1, inplace=True)
     netf_trace['Prefix'] = netf_trace.First + \
-        '.' + netf_trace.Second + '.' + netf_trace.Third + '.0/8'
+        '.' + netf_trace.Second + '.' + netf_trace.Third + '.0/24'
     netf_trace.drop(['First', 'Second', 'Third'],
                     axis=1, inplace=True)
 
@@ -256,7 +256,7 @@ def main(argv):
     elif argv[0] == "5":
         return
     else:
-        print("Choose only one question between 1 and 5 only!")
+        print("Choose one question between 1 and 5 only!")
 
 if __name__ == "__main__":
     # execute only if run as a script
