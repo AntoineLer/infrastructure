@@ -204,6 +204,16 @@ def fourth_question():
     # EXCLUDING IPv6 from data
     netf_trace = netf_trace[(netf_trace['sa'].str.contains(":") == False)]
 
+    # SORTING Source IP
+    counter = netf_trace.sa.value_counts()
+    netf_trace = netf_trace[
+        netf_trace.sa.isin(counter.index)].loc[:, ['sa', 'ibyt']].groupby('sa').sum()
+    counter = None
+    netf_trace.index.name = "IP addresses"
+    netf_trace['sa'] = netf_trace.index
+    netf_trace.index = pd.Series(range(0, len(netf_trace.index)))
+    #netf_trace = netf_trace.sort_values(by='ibyt')
+
     # CREATING IP PREFIX (SOURCE ADDRESS)
     netf_trace[['First', 'Second', 'Third', 'Fourth']
                ] = netf_trace.sa.str.split(".", expand=True)
@@ -211,15 +221,9 @@ def fourth_question():
         '.' + netf_trace.Second + '.0.0/16'
     netf_trace.drop(['First', 'Second', 'Third', 'Fourth'],
                     axis=1, inplace=True)
-
-    # SORTING Source IP
     counter = netf_trace.Prefix.value_counts()
     netf_trace = netf_trace[
-        netf_trace.Prefix.isin(counter.index)].loc[:, ['Prefix', 'ibyt']].groupby('Prefix').sum()
-    netf_trace.index.name = "Prefix IP"
-    netf_trace['Prefix'] = netf_trace.index
-    netf_trace.index = pd.Series(range(0, len(netf_trace.index)))
-    netf_trace = netf_trace.sort_values(by='ibyt')
+        netf_trace.Prefix.isin(counter.index)].loc[:, ['Prefix', 'ibyt']].groupby('Prefix').sum().sort_values(by='ibyt')
     print(netf_trace)
     print("End of Question 4!\n")
 
