@@ -28,7 +28,7 @@ import sys
 # eng       router engine type/id
 # exid      exporter SysID
 
-
+#/mnt/c/Users/Antoine/OneDrive/Documents/Antoine/ULG/MASTER\ 1/1er\ Quadri/Network\ infrastructures/Assignments/First_assignment/
 def CDF(data, comp=False):
 
     # sort the data
@@ -180,7 +180,7 @@ def third_question():
 def fourth_question():
     print("Question 4...\n")
     nrows = 92507632
-    nrows = 10**7
+    nrows = 10**5
     netf_trace = pd.read_csv(
         "netflow.csv_639fee2103e6c2d3180d_.gz",
         nrows=nrows,
@@ -205,7 +205,6 @@ def fourth_question():
     netf_trace = netf_trace[(netf_trace['sa'].str.contains(":") == False)]
 
     # SORTING Source IP
-
     # CREATING IP PREFIX (SOURCE ADDRESS)
     netf_trace[['First', 'Second', 'Third', 'Fourth']
                ] = netf_trace.sa.str.split(".", expand=True)
@@ -213,10 +212,23 @@ def fourth_question():
         '.' + netf_trace.Second + '.0.0/16'
     netf_trace.drop(['First', 'Second', 'Third', 'Fourth'],
                     axis=1, inplace=True)
+
+    # Counting the number of times a prefix is used
     counter = netf_trace.Prefix.value_counts()
     netf_trace = netf_trace[
-        netf_trace.Prefix.isin(counter.index)].loc[:, ['Prefix', 'ibyt']].groupby('Prefix').sum().sort_values(by='ibyt')
+        netf_trace.Prefix.isin(counter.index)].loc[:, ['Prefix', 'ibyt']].groupby('Prefix').sum()
+    netf_trace['Number_of_times_used'] = counter
+    netf_trace['Pr_utilization'] = netf_trace.Number_of_times_used / \
+        netf_trace.Number_of_times_used.sum()
+
+    # Sorting prefix by the number of times used
+    netf_trace = netf_trace.sort_values(by='Number_of_times_used')
+    netf_trace["Volume Traffic"] = netf_trace.ibyt / total_byte
+    netf_trace.drop('ibyt', axis=1, inplace=True)
     print(netf_trace)
+    most_popular = [0.1 / 100, 1 / 100, 10 / 100]
+    length_popular = [np.round(num * len(netf_trace)) for num in most_popular]
+    print(length_popular)
     print("End of Question 4!\n")
 
 
