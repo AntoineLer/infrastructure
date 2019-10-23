@@ -179,8 +179,8 @@ def third_question():
 
 def fourth_question():
     print("Question 4...\n")
-    nrows = 92507632
-    nrows = 10**5
+    #nrows = 92507632
+    nrows = 10**7
     netf_trace = pd.read_csv(
         "netflow.csv_639fee2103e6c2d3180d_.gz",
         nrows=nrows,
@@ -208,9 +208,10 @@ def fourth_question():
     # CREATING IP PREFIX (SOURCE ADDRESS)
     netf_trace[['First', 'Second', 'Third', 'Fourth']
                ] = netf_trace.sa.str.split(".", expand=True)
+    netf_trace.drop('Fourth', axis=1, inplace=True)
     netf_trace['Prefix'] = netf_trace.First + \
-        '.' + netf_trace.Second + '.0.0/16'
-    netf_trace.drop(['First', 'Second', 'Third', 'Fourth'],
+        '.' + netf_trace.Second + '.' + netf_trace.Third + '.0/8'
+    netf_trace.drop(['First', 'Second', 'Third'],
                     axis=1, inplace=True)
 
     # Counting the number of times a prefix is used
