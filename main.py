@@ -217,33 +217,34 @@ def fourth_question():
     total_excluded = 0
     list_chunk = []
     for chunk_data in netf_trace:
+        '''Compute the total number of bytes'''
         total_byte = total_byte + chunk_data.ibyt.sum()
 
+        '''Exclude the IPv6 addresses'''
         excluded_data = chunk_data[chunk_data['sa'].str.contains(":")]
         chunk_data.drop(excluded_data.index, axis=0, inplace=True)
         total_excluded = total_excluded + excluded_data.ibyt.sum()
 
+        '''Create IP prefix (sa) with /24 mask with Regex found on  the StackOverFlow forum'''
         chunk_data['sa'] = chunk_data.sa.str.replace(r'\.\d+$', '.0/24')
         chunk_data['Number_of_times_used'] = 1
+
+        '''Count the number of time a same prefix /24 is used'''
         chunk_data = chunk_data.loc[:, :].groupby('sa').sum()
         chunk_data['Prefix'] = chunk_data.index
         chunk_data.index = range(0, len(chunk_data))
         list_chunk.append(chunk_data)
 
+    '''Concat the list_chunk into one DataFrame'''
     netf_trace = pd.concat(list_chunk)
-    '''Compute the total number of bytes'''
 
-    '''Exclude the IPv6 addresses'''
-
+    '''Printing the percentage of traffic excluded'''
     print(
         "Percentage of traffic excluded :",
         total_excluded / total_byte,
         "\n")
 
-    '''Create IP prefix (sa) with /24 mask'''
-    #inversing (Regex found on StackOverFlow)
-    '''Count the number of time a prefix /24 is used'''
-
+    '''Count the number of time a same prefix /24 is used'''
     netf_trace = netf_trace.loc[:, :].groupby('Prefix').sum()
     netf_trace["Traffic Volume"] = netf_trace.ibyt / total_byte
     netf_trace.drop('ibyt', axis=1, inplace=True)
@@ -268,7 +269,6 @@ def fifth_question():
     Nothing but print on the terminal
     """
     print("Question 5...\n")
-    nrows = 2*(10**7)
     netf_trace = pd.read_csv(
         name,
         nrows=nrows,
@@ -278,36 +278,52 @@ def fifth_question():
             'ipkt',
             'ibyt'],
         dtype=dtype,
-        compression=compr)
+        compression=compr,
+        chunksize=chunk)
 
-    print("Finished reading files\n")
+    total_ibyt = 0
+    total_ipkt = 0
+    source_chunk = []
+    dest_chunk = []
+    for chunk_data in netf_trace:
+        '''Compute the total number of bytes'''
+        total_ibyt = total_ibyt + chunk_data.ibyt.sum()
+        total_ipkt = total_ipkt + chunk_data.ipkt.sum()
 
-    #Total number of ipkt
-    total_ipkt = netf_trace.ipkt.sum()
-    #Total number ibyt
-    total_ibyt = netf_trace.ibyt.sum()
+        '''Exclude the IPv6 addresses'''
+        excluded_data = chunk_data[chunk_data['sa'].str.contains(":")]
+        chunk_data.drop(excluded_data.index, axis=0, inplace=True)
 
-    #Excluded Data are IPv6
-    excluded_data = netf_trace[netf_trace['sa'].str.contains(":")]
-    netf_trace.drop(excluded_data.index, axis=0, inplace=True)
-    excluded_data = None
+        '''Create IP prefix (sa) with /24 mask with Regex found on  the StackOverFlow forum'''
+        chunk_data['sa'] = chunk_data.sa.str.replace(r'\.\d+$', '.0/24')
+        chunk_data['da'] = chunk_data.da.str.replace(r'\.\d+$', '.0/24')
+        chunk_data['Number_of_times_used'] = 1
 
-    #IP Prefix sa
-    netf_trace['sa'] = netf_trace.sa.str.replace(r'\.\d+$', '.0/24')
-    #IP prefix da
-    netf_trace['da'] = netf_trace.da.str.replace(r'\.\d+$', '.0/24')
-    netf_trace['Number_of_times_used'] = 1
+        '''Count the number of time a same prefix /24 is used'''
+        #Source
+        source = chunk_data.loc[:,:].groupby('sa').sum()
+        source['sa'] = source.index
+        source.index = range(0, len(source))
+        source_chunk.append(source)
+        #Destination
+        dest = chunk_data.loc[:,:].groupby('da').sum()
+        dest['da'] = dest.index
+        dest.index = range(0, len(dest))
+        dest_chunk.append(dest)
 
+    '''Concat the list_chunk into one DataFrame'''
+    source = pd.concat(source_chunk)
+    dest = pd.concat(dest_chunk)
     #Source
     print("Number of times the popular sources addresses appear:")
-    source = netf_trace.groupby('sa').sum().nlargest(10, 'Number_of_times_used')
+    source = source.groupby('sa').sum().nlargest(10, 'Number_of_times_used')
     source.ipkt = source.ipkt / total_ipkt
     source.ibyt = source.ibyt / total_ibyt
     print(source)
 
     #Destination
     print("Number of times the popular destinations addresses appear:")
-    dest = netf_trace.groupby('da').sum().nlargest(10, 'Number_of_times_used')
+    dest = dest.groupby('da').sum().nlargest(10, 'Number_of_times_used')
     dest.ipkt = dest.ipkt / total_ipkt
     dest.ibyt = dest.ibyt / total_ibyt
     print(dest)
