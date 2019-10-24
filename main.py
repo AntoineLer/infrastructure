@@ -170,6 +170,7 @@ def fourth_question():
     # CREATING IP PREFIX (SOURCE ADDRESS) with /24 MASK
     IP_divided = netf_trace.sa.str.split(".", expand=True)
     netf_trace['Prefix'] = IP_divided[0] + '.' + IP_divided[1] + '.' + IP_divided[3] + '.0/24'
+    IP_divided = None
     netf_trace.drop('sa', axis=1, inplace=True)
     IP_divided = None
 
@@ -181,25 +182,12 @@ def fourth_question():
     netf_trace.drop('ibyt', axis=1, inplace=True)
 
     # SORTING PREFIX BY THE NUMER OF TIMES USED
-    netf_trace = netf_trace.sort_values(by='Number_of_times_used', ascending=False)
-
-    ####### ON DOIT DECIDER DE QUEL MASK GARDER ? #######
-
-    # CREATING IP PREFIX (SOURCE ADDRESS) with /16 MASK
-    """mask = netf_trace
-    mask['Prefix'] = counter.index
-    mask.index = pd.Series(range(0, len(netf_trace)))
-    mask[['First', 'Second', 'Third', 'Fourth']] = mask.Prefix.str.split(".", expand=True)
-    mask['Prefix'] = netf_trace.First + '.' + netf_trace.Second + '.0.0/16'
-    mask.drop(['First', 'Second', 'Third', 'Fourth'], axis=1, inplace=True)
-    counter = netf_trace.Prefix.value_counts()
-    mask = mask[mask.Prefix.isin(counter.index)].groupby('Prefix').sum().sort_values(by='Number_of_times_used')
-    print(mask)"""
+    #netf_trace = netf_trace.sort_values(by='Number_of_times_used', ascending=False)
 
     most_popular_percentage = [(0.001, "0.1% of source IP prefixe:"), (0.01,"1% of source IP prefixe:"), (0.1, "10% of source IP prefixe:")]
     most_popular = [(round(Pb[0]*netf_trace['Number_of_times_used'].shape[0]), Pb[1]) for Pb in most_popular_percentage]
     for popular in most_popular:
-        print("Fraction of the volume from the most popular " + popular[1], netf_trace.head(popular[0])['Traffic Volume'].sum(), "\n")
+        print("Fraction of the volume from the most popular " + popular[1], netf_trace.nlargest(popular[0], 'Number_of_times_used')['Traffic Volume'].sum(), "\n")
     ###### TO CONTINUE ######
     print("End of Question 4!\n")
 
@@ -216,9 +204,9 @@ def fifth_question():
         compression='gzip')
     IP_MONTEF ="139.165."
     IP_RUN = "139.165."
-
-    BY_MONTEF = netf_trace[netf_trace.sa.str.contains(IP_MONTEF, na=False)]
-    TO_MONTEF = netf_trace[netf_trace.da.str.contains(IP_MONTEF, na=False)]
+    netf_trace.drop([netf_trace['sa'].str.contains(":")].index, axis=0, inplace=True)
+    BY_MONTEF = netf_trace[netf_trace.sa.str.contains(IP_MONTEF)]
+    TO_MONTEF = netf_trace[netf_trace.da.str.contains(IP_MONTEF)]
     print(BY_MONTEF, "\n", TO_MONTEF)
 
     print("End of Question 5!\n")
