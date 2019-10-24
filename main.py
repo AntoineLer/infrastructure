@@ -15,7 +15,7 @@ dtype = {'td':'float32',    #time duration
          'dp':'uint32',     #destination port
          'pr':'object',     #protocol
          'sa':'object'}     #source IP address
-chunk = 10**6
+chunk = 10**6               #Chunk for read_csv
 
 def CDF(data, comp=False):
     """Function computing the (complementary) cumulative distribution
@@ -139,6 +139,12 @@ def second_question():
         plot(x, y, value, '$Probability$', 'ccdf_log_' + key, True, True)
     print("End of Question 2!\n")
 
+def create_chunk_Q3(data, protocol, port):
+        data = data[data.pr == protocol]
+        data = data[[port, 'ibyt']].groupby(port).sum()
+        data[port] = data.index
+        data.index = range(0, len(data))
+        return data
 
 def third_question():
     """Function used to answer the question 3:
@@ -152,7 +158,6 @@ def third_question():
     """
 
     print("Question 3...\n")
-
     '''Read the sp, dp, pr and ibyt field of the data file'''
     netf_trace = pd.read_csv(
         name,
@@ -163,30 +168,43 @@ def third_question():
             'pr',
             'ibyt'],
         dtype=dtype,
-        compression=compr)
+        compression=compr,
+        chunksize=chunk)
 
-    '''Compute the total number of bytes'''
-    number_of_byte = netf_trace.ibyt.sum()
+    number_of_byte = 0
+    tcp_sp_chunk = []
+    tcp_dp_chunk = []
+    udp_sp_chunk = []
+    udp_dp_chunk = []
+    for chunk_data in netf_trace:
+        '''Compute the total number of bytes'''
+        number_of_byte = number_of_byte + chunk_data.ibyt.sum()
 
-    '''Generate TCP/UDP source/destionation port tables for each pair'''
-    port_type = {'Source Port':'sp', 'Destination Port':'dp'}
-    for ptc in ['TCP', 'UDP']:
-        for port_type_name, p_type in port_type.items():
-            print(ptc + ' ' + port_type_name + ':\n')
+        '''Create DataFrame for each protocol and port'''
+        tcp_sp_chunk.append(create_chunk_Q3(chunk_data, 'TCP', 'sp'))
+        tcp_dp_chunk.append(create_chunk_Q3(chunk_data, 'TCP', 'dp'))
+        udp_sp_chunk.append(create_chunk_Q3(chunk_data, 'UDP', 'sp'))
+        udp_dp_chunk.append(create_chunk_Q3(chunk_data, 'UDP', 'dp'))
 
-            '''Top-ten most used port'''
-            top_ten_port = netf_trace[netf_trace.pr ==
-                        ptc][p_type].value_counts().head(10)
+    '''Creating the table containing the top-ten port used by the protocols TCP/UDP'''
+    #TCP SOURCE PORT
+    tcp_sp = pd.concat(tcp_sp_chunk).groupby('sp').sum().nlargest(10, 'ibyt')
+    tcp_sp['Volume Traffic'] = (tcp_sp.ibyt / number_of_byte)*100
+    #TCP DEST. PORT
+    tcp_dp = pd.concat(tcp_dp_chunk).groupby('dp').sum().nlargest(10, 'ibyt')
+    tcp_dp['Volume Traffic'] = (tcp_dp.ibyt / number_of_byte)*100
+    #UDP SOURCE PORT
+    udp_sp = pd.concat(udp_sp_chunk).groupby('sp').sum().nlargest(10,'ibyt')
+    udp_sp['Volume Traffic'] = (udp_sp.ibyt / number_of_byte)*100
+    #UDP DEST. PORT
+    udp_dp = pd.concat(udp_dp_chunk).groupby('dp').sum().nlargest(10, 'ibyt')
+    udp_dp['Volume Traffic'] = (udp_dp.ibyt / number_of_byte)*100
 
-            '''Get corresponding traffic volume'''
-            top_ten_port = netf_trace[netf_trace[p_type].isin(top_ten_port.index)].loc[
-                :, [p_type, 'ibyt']].groupby(p_type).sum()
-            top_ten_port['Traffic Volume'] = top_ten_port.ibyt / number_of_byte
-            top_ten_port.index.name = port_type_name
-            top_ten_port = top_ten_port.sort_values(by = 'Traffic Volume', ascending=False)
-
-            '''Print the table'''
-            print(top_ten_port, '\n')
+    '''Printing the tables'''
+    print("TCP source Port:\n", tcp_sp, "\n")
+    print('TCP dest. Port:\n', tcp_dp, "\n")
+    print("UDP source Port:\n", udp_sp, "\n")
+    print('UDP dest. Port:\n', udp_dp, "\n")
 
     print("End of Question 3!\n")
 
