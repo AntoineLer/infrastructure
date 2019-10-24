@@ -106,7 +106,7 @@ def second_question():
         x, y = CDF(data[key], True)
         # plot linear scale
         plot(x, y, value, '$p$', 'ccdf_linear_' + key)
-        plot(x, y, value, '$p$', 'ccdf_log_' + key, True, False)
+        plot(x, y, value, '$p$', 'ccdf_log_' + key, True, True)
     print("End of Question 2!\n")
 
 
@@ -143,8 +143,7 @@ def third_question():
 
 def fourth_question():
     print("Question 4...\n")
-    #nrows = 92507632
-    nrows = 10**6
+    nrows = 10**7
     netf_trace = pd.read_csv(
         "netflow.csv_639fee2103e6c2d3180d_.gz",
         nrows=nrows,
@@ -167,43 +166,63 @@ def fourth_question():
     netf_trace = netf_trace[(netf_trace['sa'].str.contains(":") == False)]
 
     # CREATING IP PREFIX (SOURCE ADDRESS) with /24 MASK
-    netf_trace[['First', 'Second', 'Third', 'Fourth']] = netf_trace.sa.str.split(".", expand=True)
-    netf_trace.drop('Fourth', axis=1, inplace=True)
-    netf_trace['Prefix'] = netf_trace.First + '.' + netf_trace.Second + '.' + netf_trace.Third + '.0/24'
-    netf_trace.drop(['First', 'Second', 'Third'], axis=1, inplace=True)
+    IP_divided = netf_trace.sa.str.split(".", expand=True)
+    netf_trace['Prefix'] = IP_divided[0] + '.' + IP_divided[1] + '.' + IP_divided[3] + '.0/24'
+    IP_divided = None
 
     # COUNTING THE NUMBER OF TIMES A PREFIX WITH /24 MASK IS USED
-    counter = netf_trace.Prefix.value_counts()
-    netf_trace = netf_trace[netf_trace.Prefix.isin(counter.index)].loc[:, ['Prefix', 'ibyt']].groupby('Prefix').sum()
-    netf_trace['Number_of_times_used'] = counter
+    #counter = netf_trace.Prefix.value_counts()
+    #netf_trace = netf_trace[netf_trace.Prefix.isin(counter.index)].loc[:, ['Prefix', 'ibyt']].groupby('Prefix').sum()
+    netf_trace['Number_of_times_used'] = 1
+    netf_trace = netf_trace.loc[:, :].groupby('Prefix').sum()
     netf_trace['Pr_utilization'] = netf_trace.Number_of_times_used / netf_trace.Number_of_times_used.sum()
     netf_trace["Traffic Volume"] = netf_trace.ibyt / total_byte
     netf_trace.drop('ibyt', axis=1, inplace=True)
 
     # SORTING PREFIX BY THE NUMER OF TIMES USED
-    #netf_trace = netf_trace.sort_values(by='Prefix')
-    print(netf_trace)
+    netf_trace = netf_trace.sort_values(by='Number_of_times_used', ascending=False)
+    #print(netf_trace)
 
     ####### ON DOIT DECIDER DE QUEL MASK GARDER ? #######
 
     # CREATING IP PREFIX (SOURCE ADDRESS) with /16 MASK
-    mask = netf_trace
+    """mask = netf_trace
     mask['Prefix'] = counter.index
     mask.index = pd.Series(range(0, len(netf_trace)))
     mask[['First', 'Second', 'Third', 'Fourth']] = mask.Prefix.str.split(".", expand=True)
     mask['Prefix'] = netf_trace.First + '.' + netf_trace.Second + '.0.0/16'
     mask.drop(['First', 'Second', 'Third', 'Fourth'], axis=1, inplace=True)
     counter = netf_trace.Prefix.value_counts()
-    mask = mask[mask.Prefix.isin(counter.index)].groupby('Prefix').sum()
-    print(mask)
+    mask = mask[mask.Prefix.isin(counter.index)].groupby('Prefix').sum().sort_values(by='Number_of_times_used')
+    print(mask)"""
 
 
-    most_popular = [0.1 / 100, 1 / 100, 10 / 100]
-    length_popular = [np.round(num * len(netf_trace)) for num in most_popular]
-    print(length_popular)
+    most_popular_percentage = [(0.001, "0.1% of source IP prefixe:"), (0.01,"1% of source IP prefixe:"), (0.1, "10% of source IP prefixe:")]
+    most_popular = [(round(Pb[0]*netf_trace['Number_of_times_used'].shape[0]), Pb[1]) for Pb in most_popular_percentage]
+    for popular in most_popular:
+        print("Fraction of the volume from the most popular " + popular[1], netf_trace.head(popular[0])['Traffic Volume'].sum(), "\n")
     ###### TO CONTINUE ######
     print("End of Question 4!\n")
 
+def fifth_question():
+    print("Question 5...\n")
+    nrows = 10**6
+    netf_trace = pd.read_csv(
+        "netflow.csv_639fee2103e6c2d3180d_.gz",
+        nrows=nrows,
+        usecols=[
+            'sa',
+            'da',
+            'ibyt'],
+        compression='gzip')
+    IP_MONTEF ="139.165."
+    IP_RUN = "139.165."
+
+    BY_MONTEF = netf_trace[netf_trace.sa.str.contains(IP_MONTEF, na=False)]
+    TO_MONTEF = netf_trace[netf_trace.da.str.contains(IP_MONTEF, na=False)]
+    print(BY_MONTEF, "\n", TO_MONTEF)
+
+    print("End of Question 5!\n")
 
 def main(argv):
     if argv[0] == "1":
@@ -226,7 +245,7 @@ def main(argv):
     elif argv[0] == "4":
         fourth_question()
     elif argv[0] == "5":
-        return
+        fifth_question()
     else:
         print("Choose one question between 1 and 5 only!")
 
