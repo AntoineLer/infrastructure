@@ -171,8 +171,6 @@ def fourth_question():
     IP_divided = None
 
     # COUNTING THE NUMBER OF TIMES A PREFIX WITH /24 MASK IS USED
-    #counter = netf_trace.Prefix.value_counts()
-    #netf_trace = netf_trace[netf_trace.Prefix.isin(counter.index)].loc[:, ['Prefix', 'ibyt']].groupby('Prefix').sum()
     netf_trace['Number_of_times_used'] = 1
     netf_trace = netf_trace.loc[:, :].groupby('Prefix').sum()
     netf_trace['Pr_utilization'] = netf_trace.Number_of_times_used / netf_trace.Number_of_times_used.sum()
