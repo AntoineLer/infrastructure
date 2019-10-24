@@ -319,14 +319,14 @@ def fifth_question():
     source = source.groupby('sa').sum().nlargest(10, 'Number_of_times_used')
     source.ipkt = source.ipkt / total_ipkt
     source.ibyt = source.ibyt / total_ibyt
-    print(source)
+    print(source, "\n")
 
     #Destination
     print("Number of times the popular destinations addresses appear:")
     dest = dest.groupby('da').sum().nlargest(10, 'Number_of_times_used')
     dest.ipkt = dest.ipkt / total_ipkt
     dest.ibyt = dest.ibyt / total_ibyt
-    print(dest)
+    print(dest, "\n")
 
     print("End of Question 5!\n")
 
@@ -347,4 +347,5 @@ def main(argv):
 
 if __name__ == "__main__":
     # execute only if run as a script
+    '''COMMAND: "python3 main.py x" where x = 1,2,3,4,5'''
     main(sys.argv[1:])
