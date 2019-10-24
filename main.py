@@ -136,6 +136,7 @@ def third_question():
                 :, [p_type, 'ibyt']].groupby(p_type).sum()
             top_ten_port['Traffic Volume'] = top_ten_port.ibyt / number_of_byte
             top_ten_port.index.name = port_type_name
+            top_ten_port = top_ten_port.sort_values(by='Traffic Volume')
             print(top_ten_port, '\n')
 
     print("End of Question 3!\n")
@@ -143,7 +144,6 @@ def third_question():
 
 def fourth_question():
     print("Question 4...\n")
-    nrows = 10**7
     netf_trace = pd.read_csv(
         "netflow.csv_639fee2103e6c2d3180d_.gz",
         nrows=nrows,
@@ -161,25 +161,27 @@ def fourth_question():
         "Percentage of traffic excluded :",
         excluded_data.ibyt.sum() / total_byte,
         "\n")
-    excluded_data = None
+
     # EXCLUDING IPv6 from data
-    netf_trace = netf_trace[(netf_trace['sa'].str.contains(":") == False)]
+    #netf_trace = netf_trace[(netf_trace['sa'].str.contains(":") == False)]
+    netf_trace.drop(excluded_data.index, axis=0, inplace=True)
+    excluded_data = None
 
     # CREATING IP PREFIX (SOURCE ADDRESS) with /24 MASK
     IP_divided = netf_trace.sa.str.split(".", expand=True)
     netf_trace['Prefix'] = IP_divided[0] + '.' + IP_divided[1] + '.' + IP_divided[3] + '.0/24'
+    netf_trace.drop('sa', axis=1, inplace=True)
     IP_divided = None
 
     # COUNTING THE NUMBER OF TIMES A PREFIX WITH /24 MASK IS USED
     netf_trace['Number_of_times_used'] = 1
     netf_trace = netf_trace.loc[:, :].groupby('Prefix').sum()
-    netf_trace['Pr_utilization'] = netf_trace.Number_of_times_used / netf_trace.Number_of_times_used.sum()
+    netf_trace['Traffic_utilization'] = netf_trace.Number_of_times_used / netf_trace.Number_of_times_used.sum()
     netf_trace["Traffic Volume"] = netf_trace.ibyt / total_byte
     netf_trace.drop('ibyt', axis=1, inplace=True)
 
     # SORTING PREFIX BY THE NUMER OF TIMES USED
     netf_trace = netf_trace.sort_values(by='Number_of_times_used', ascending=False)
-    #print(netf_trace)
 
     ####### ON DOIT DECIDER DE QUEL MASK GARDER ? #######
 
@@ -193,7 +195,6 @@ def fourth_question():
     counter = netf_trace.Prefix.value_counts()
     mask = mask[mask.Prefix.isin(counter.index)].groupby('Prefix').sum().sort_values(by='Number_of_times_used')
     print(mask)"""
-
 
     most_popular_percentage = [(0.001, "0.1% of source IP prefixe:"), (0.01,"1% of source IP prefixe:"), (0.1, "10% of source IP prefixe:")]
     most_popular = [(round(Pb[0]*netf_trace['Number_of_times_used'].shape[0]), Pb[1]) for Pb in most_popular_percentage]
@@ -241,6 +242,9 @@ def main(argv):
         # filter TCP/UDP flows
         third_question()
     elif argv[0] == "4":
+        #-------------question 4-------------
+
+        # filter IP prefixes
         fourth_question()
     elif argv[0] == "5":
         fifth_question()
