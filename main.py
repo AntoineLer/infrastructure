@@ -6,7 +6,7 @@ import sys
 
 '''Global variables about the file to read.'''
 name = 'netflow.csv_639fee2103e6c2d3180d_.gz'
-nrows = 1000000
+nrows = 92507632
 compr = 'gzip'
 dtype = {'td':'float32',    #time duration
          'ipkt':'uint32',   #nbr of bytes
@@ -239,7 +239,7 @@ def fourth_question():
     for popular in most_popular:
         print("Fraction of the volume from the most popular " + popular[1], netf_trace.nlargest(popular[0], 'Number_of_times_used')['Traffic Volume'].sum(), "\n")
 
-    print(netf_trace.sort_values(by='Traffic Volume', ascending=False).head(10))
+    print(netf_trace.nlargest(10, 'Traffic Volume'))
 
     print("End of Question 4!\n")
 
@@ -253,28 +253,49 @@ def fifth_question():
     Nothing but print on the terminal
     """
     print("Question 5...\n")
-
+    nrows = 2*(10**7)
     netf_trace = pd.read_csv(
         name,
         nrows=nrows,
         usecols=[
             'sa',
             'da',
+            'ipkt',
             'ibyt'],
         dtype=dtype,
         compression=compr)
 
     print("Finished reading files\n")
-    #IP Prefix sa
-    netf_trace['Prefix_sa'] = netf_trace.sa.str.replace(r'\.\d+$', '')
-    netf_trace['Prefix_sa'] = netf_trace.Prefix_sa.str.replace(r'\.\d+$', '.0.0/16')
-    #IP Prefix da
-    netf_trace['Prefix_da'] = netf_trace.da.str.replace(r'\.\d+$', '')
-    netf_trace['Prefix_da'] = netf_trace.Prefix_da.str.replace(r'\.\d+$', '.0.0/16')
 
-    print("Finished Prefix\n")
-    netf_trace = netf_trace[netf_trace.Prefix_sa == netf_trace.Prefix_da]
-    print(netf_trace)
+    #Total number of ipkt
+    total_ipkt = netf_trace.ipkt.sum()
+    #Total number ibyt
+    total_ibyt = netf_trace.ibyt.sum()
+
+    #Excluded Data are IPv6
+    excluded_data = netf_trace[netf_trace['sa'].str.contains(":")]
+    netf_trace.drop(excluded_data.index, axis=0, inplace=True)
+    excluded_data = None
+
+    #IP Prefix sa
+    netf_trace['sa'] = netf_trace.sa.str.replace(r'\.\d+$', '.0/24')
+    #IP prefix da
+    netf_trace['da'] = netf_trace.da.str.replace(r'\.\d+$', '.0/24')
+    netf_trace['Number_of_times_used'] = 1
+
+    #Source
+    print("Number of times the popular sources addresses appear:")
+    source = netf_trace.groupby('sa').sum().nlargest(10, 'Number_of_times_used')
+    source.ipkt = source.ipkt / total_ipkt
+    source.ibyt = source.ibyt / total_ibyt
+    print(source)
+    
+    #Destination
+    print("Number of times the popular destinations addresses appear:")
+    dest = netf_trace.groupby('da').sum().nlargest(10, 'Number_of_times_used')
+    dest.ipkt = dest.ipkt / total_ipkt
+    dest.ibyt = dest.ibyt / total_ibyt
+    print(dest)
 
     print("End of Question 5!\n")
 
