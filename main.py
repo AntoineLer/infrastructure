@@ -177,7 +177,6 @@ def fourth_question():
     # COUNTING THE NUMBER OF TIMES A PREFIX WITH /24 MASK IS USED
     netf_trace['Number_of_times_used'] = 1
     netf_trace = netf_trace.loc[:, :].groupby('Prefix').sum()
-    netf_trace['Traffic_utilization'] = netf_trace.Number_of_times_used / netf_trace.Number_of_times_used.sum()
     netf_trace["Traffic Volume"] = netf_trace.ibyt / total_byte
     netf_trace.drop('ibyt', axis=1, inplace=True)
 
