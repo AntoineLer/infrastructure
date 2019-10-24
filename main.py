@@ -6,7 +6,7 @@ import sys
 
 '''Global variables about the file to read.'''
 name = 'netflow.csv_639fee2103e6c2d3180d_.gz'
-nrows = 92507632
+nrows = 1000000
 compr = 'gzip'
 dtype = {'td':'float32',    #time duration
          'ipkt':'uint32',   #nbr of bytes
@@ -224,9 +224,8 @@ def fourth_question():
     excluded_data = None
 
     '''Create IP prefix (sa) with /24 mask'''
-    #inversing (Regex find on StackOverFlow)
+    #inversing (Regex found on StackOverFlow)
     netf_trace['Prefix'] = netf_trace.sa.str.replace(r'\.\d+$', '.0/24')
-    #netf_trace.drop('sa', axis=1, inplace=True)
 
     '''Count the number of time a prefix /24 is used'''
     netf_trace['Number_of_times_used'] = 1
@@ -265,6 +264,7 @@ def fifth_question():
         dtype=dtype,
         compression=compr)
 
+    print("Finished reading files\n")
     #IP Prefix sa
     netf_trace['Prefix_sa'] = netf_trace.sa.str.replace(r'\.\d+$', '')
     netf_trace['Prefix_sa'] = netf_trace.Prefix_sa.str.replace(r'\.\d+$', '.0.0/16')
@@ -272,7 +272,10 @@ def fifth_question():
     netf_trace['Prefix_da'] = netf_trace.da.str.replace(r'\.\d+$', '')
     netf_trace['Prefix_da'] = netf_trace.Prefix_da.str.replace(r'\.\d+$', '.0.0/16')
 
+    print("Finished Prefix\n")
+    netf_trace = netf_trace[netf_trace.Prefix_sa == netf_trace.Prefix_da]
     print(netf_trace)
+
     print("End of Question 5!\n")
 
 
