@@ -6,7 +6,7 @@ import sys
 
 '''Global variables about the file to read.'''
 name = 'netflow.csv_639fee2103e6c2d3180d_.gz'
-nrows = 1000000#92507632
+nrows = 92507632
 compr = 'gzip'
 dtype = {'td':'float32',    #time duration
          'ipkt':'uint32',   #nbr of bytes
@@ -224,10 +224,9 @@ def fourth_question():
     excluded_data = None
 
     '''Create IP prefix (sa) with /24 mask'''
-    IP_divided = netf_trace.sa.str.split(".", expand=True)
-    netf_trace['Prefix'] = IP_divided[0] + '.' + IP_divided[1] + '.' + IP_divided[3] + '.0/24'
-    netf_trace.drop('sa', axis=1, inplace=True)
-    IP_divided = None
+    #inversing (Regex find on StackOverFlow)
+    netf_trace['Prefix'] = netf_trace.sa.str.replace(r'\.\d+$', '.0/24')
+    #netf_trace.drop('sa', axis=1, inplace=True)
 
     '''Count the number of time a prefix /24 is used'''
     netf_trace['Number_of_times_used'] = 1
@@ -236,11 +235,12 @@ def fourth_question():
     netf_trace.drop('ibyt', axis=1, inplace=True)
 
     '''Print most popular source IP prefix'''
-    most_popular_percentage = [(0.001, "0.1% of source IP prefix:"), (0.01,"1% of source IP prefixe:"), (0.1, "10% of source IP prefixe:")]
+    most_popular_percentage = [(0.001, "0.1% of source IP prefix :"), (0.01,"1% of source IP prefix:"), (0.1, "10% of source IP prefix:")]
     most_popular = [(round(Pb[0]*netf_trace['Number_of_times_used'].shape[0]), Pb[1]) for Pb in most_popular_percentage]
     for popular in most_popular:
         print("Fraction of the volume from the most popular " + popular[1], netf_trace.nlargest(popular[0], 'Number_of_times_used')['Traffic Volume'].sum(), "\n")
 
+    print(netf_trace.sort_values(by='Traffic Volume', ascending=False).head(10))
 
     print("End of Question 4!\n")
 
@@ -265,13 +265,14 @@ def fifth_question():
         dtype=dtype,
         compression=compr)
 
-    IP_MONTEF ="139.165."
-    IP_RUN = "139.165."
+    #IP Prefix sa
+    netf_trace['Prefix_sa'] = netf_trace.sa.str.replace(r'\.\d+$', '')
+    netf_trace['Prefix_sa'] = netf_trace.Prefix_sa.str.replace(r'\.\d+$', '.0.0/16')
+    #IP Prefix da
+    netf_trace['Prefix_da'] = netf_trace.da.str.replace(r'\.\d+$', '')
+    netf_trace['Prefix_da'] = netf_trace.Prefix_da.str.replace(r'\.\d+$', '.0.0/16')
 
-    BY_MONTEF = netf_trace[netf_trace.sa.str.contains(IP_MONTEF, na=False)]
-    TO_MONTEF = netf_trace[netf_trace.da.str.contains(IP_MONTEF, na=False)]
-    print(BY_MONTEF, "\n", TO_MONTEF)
-
+    print(netf_trace)
     print("End of Question 5!\n")
 
 
