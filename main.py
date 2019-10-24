@@ -220,18 +220,18 @@ def fourth_question():
         total_byte = total_byte + chunk_data.ibyt.sum()
 
         excluded_data = chunk_data[chunk_data['sa'].str.contains(":")]
-        print(excluded_data)
-        chunk_data.drop(excluded_data, axis=0, inplace=True)
+        chunk_data.drop(excluded_data.index, axis=0, inplace=True)
         total_excluded = total_excluded + excluded_data.ibyt.sum()
 
         chunk_data['sa'] = chunk_data.sa.str.replace(r'\.\d+$', '.0/24')
         chunk_data['Number_of_times_used'] = 1
-
+        chunk_data = chunk_data.loc[:, :].groupby('sa').sum()
+        chunk_data['Prefix'] = chunk_data.index
+        chunk_data.index = range(0, len(chunk_data))
         list_chunk.append(chunk_data)
 
     netf_trace = pd.concat(list_chunk)
     '''Compute the total number of bytes'''
-    total_byte = netf_trace.ibyt.sum()
 
     '''Exclude the IPv6 addresses'''
 
