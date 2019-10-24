@@ -15,6 +15,7 @@ dtype = {'td':'float32',    #time duration
          'dp':'uint32',     #destination port
          'pr':'object',     #protocol
          'sa':'object'}     #source IP address
+chunk = 10**6
 
 def CDF(data, comp=False):
     """Function computing the (complementary) cumulative distribution
@@ -209,26 +210,40 @@ def fourth_question():
             'sa',
             'ibyt'],
         dtype=dtype,
-        compression=compr)
+        compression=compr,
+        chunksize=chunk)
 
+    total_byte = 0
+    total_excluded = 0
+    list_chunk = []
+    for chunk_data in netf_trace:
+        total_byte = total_byte + chunk_data.ibyt.sum()
+
+        excluded_data = chunk_data[chunk_data['sa'].str.contains(":")]
+        print(excluded_data)
+        chunk_data.drop(excluded_data, axis=0, inplace=True)
+        total_excluded = total_excluded + excluded_data.ibyt.sum()
+
+        chunk_data['sa'] = chunk_data.sa.str.replace(r'\.\d+$', '.0/24')
+        chunk_data['Number_of_times_used'] = 1
+
+        list_chunk.append(chunk_data)
+
+    netf_trace = pd.concat(list_chunk)
     '''Compute the total number of bytes'''
     total_byte = netf_trace.ibyt.sum()
 
     '''Exclude the IPv6 addresses'''
-    excluded_data = netf_trace[netf_trace['sa'].str.contains(":")]
+
     print(
         "Percentage of traffic excluded :",
-        excluded_data.ibyt.sum() / total_byte,
+        total_excluded / total_byte,
         "\n")
-    netf_trace.drop(excluded_data.index, axis=0, inplace=True)
-    excluded_data = None
 
     '''Create IP prefix (sa) with /24 mask'''
     #inversing (Regex found on StackOverFlow)
-    netf_trace['Prefix'] = netf_trace.sa.str.replace(r'\.\d+$', '.0/24')
-
     '''Count the number of time a prefix /24 is used'''
-    netf_trace['Number_of_times_used'] = 1
+
     netf_trace = netf_trace.loc[:, :].groupby('Prefix').sum()
     netf_trace["Traffic Volume"] = netf_trace.ibyt / total_byte
     netf_trace.drop('ibyt', axis=1, inplace=True)
@@ -289,7 +304,7 @@ def fifth_question():
     source.ipkt = source.ipkt / total_ipkt
     source.ibyt = source.ibyt / total_ibyt
     print(source)
-    
+
     #Destination
     print("Number of times the popular destinations addresses appear:")
     dest = netf_trace.groupby('da').sum().nlargest(10, 'Number_of_times_used')
